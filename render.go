@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/yuin/goldmark"
 )
@@ -22,7 +23,10 @@ var templates = template.New("")
 
 func init() {
 	templates.Funcs(template.FuncMap{
-		"markdown": markdown,
+		"smartTime":   smartTime,
+		"markdown":    markdown,
+		"byteCountSI": byteCountSI,
+		"plusOne":     plusOne,
 	})
 	templates = template.Must(templates.ParseFS(tmpl, filepath.Join(configs.tmplPath, "*.html")))
 }
@@ -54,4 +58,26 @@ func Derive(w http.ResponseWriter, tmpl string, p *Object) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("err template: %s.html\n\terror: %v", tmpl, err)
 	}
+}
+
+func smartTime(t time.Time) string {
+	return t.Format("2006-01-02 15:04:05")
+}
+
+func byteCountSI(b int64) string {
+	const unit = 1000
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB",
+		float64(b)/float64(div), "kMGTPE"[exp])
+}
+
+func plusOne(x int) int {
+	return x + 1
 }

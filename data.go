@@ -9,19 +9,20 @@ import (
 )
 
 type Object struct {
-	Name, Body, Folder, Filename string
-	Data                         []interface{}
-	Err                          error
+	Title, Body, Folder, FileTitle string
+	Data                           []interface{}
+	Err                            error
+	Info                           string
 }
 
-func NewObject(name string) (*Object, error) {
-	name, err := url.QueryUnescape(name)
+func NewObject(title string) (*Object, error) {
+	title, err := url.QueryUnescape(title)
 	if err != nil {
 		return nil, err
 	}
-	p := &Object{Name: name}
-	p.Folder = filepath.Join(configs.dataPath, name)
-	p.Filename = filepath.Join(p.Folder, name+".md")
+	p := &Object{Title: title}
+	p.Folder = filepath.Join(configs.dataPath, title)
+	p.FileTitle = filepath.Join(p.Folder, title+".md")
 	return p, nil
 }
 
@@ -30,12 +31,12 @@ func save(p *Object) error {
 	if _, err := os.Stat(p.Folder); err != nil && os.IsNotExist(err) {
 		os.MkdirAll(p.Folder, 0755)
 	}
-	return ioutil.WriteFile(p.Filename, []byte(p.Body), 0600)
+	return ioutil.WriteFile(p.FileTitle, []byte(p.Body), 0600)
 }
 
 // load read person info after NewObject() generate the p
 func load(p *Object) (*Object, error) {
-	body, err := ioutil.ReadFile(p.Filename)
+	body, err := ioutil.ReadFile(p.FileTitle)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return p, err
