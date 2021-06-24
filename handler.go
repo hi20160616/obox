@@ -35,6 +35,20 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, *Object)) http.Hand
 	}
 }
 
+func listHandler(w http.ResponseWriter, r *http.Request) {
+	objs := &Objects{Title: "Objects list"}
+	dirs, err := os.ReadDir(configs.dataPath)
+	if err != nil {
+		fmt.Printf("error walking the path %q: %v\n", configs.dataPath, err)
+	}
+	for _, dir := range dirs {
+		if dir.IsDir() {
+			objs.Data = append(objs.Data, dir.Name())
+		}
+	}
+	DeriveList(w, objs)
+}
+
 func viewHandler(w http.ResponseWriter, r *http.Request, o *Object) {
 	o, err := load(o)
 	if err != nil {

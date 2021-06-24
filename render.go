@@ -53,10 +53,17 @@ func markdown(in string) (string, error) {
 	return buf.String(), nil
 }
 
-func Derive(w http.ResponseWriter, tmpl string, p *Object) {
-	if err := templates.ExecuteTemplate(w, tmpl+".html", p); err != nil {
+func Derive(w http.ResponseWriter, tmpl string, o *Object) {
+	if err := templates.ExecuteTemplate(w, tmpl+".html", o); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("err template: %s.html\n\terror: %v", tmpl, err)
+	}
+}
+
+func DeriveList(w http.ResponseWriter, os *Objects) {
+	if err := templates.ExecuteTemplate(w, "list.html", os); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("err template: list.html\n\terror: %v", err)
 	}
 }
 

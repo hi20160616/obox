@@ -15,6 +15,11 @@ type Object struct {
 	Info                           string
 }
 
+type Objects struct {
+	Title string
+	Data  []string
+}
+
 func NewObject(title string) (*Object, error) {
 	title, err := url.QueryUnescape(title)
 	if err != nil {
