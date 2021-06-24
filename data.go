@@ -27,22 +27,22 @@ func NewObject(title string) (*Object, error) {
 }
 
 // save write done Body after NewObject() generate the p
-func save(p *Object) error {
-	if _, err := os.Stat(p.Folder); err != nil && os.IsNotExist(err) {
-		os.MkdirAll(p.Folder, 0755)
+func save(o *Object) error {
+	if _, err := os.Stat(o.Folder); err != nil && os.IsNotExist(err) {
+		os.MkdirAll(o.Folder, 0755)
 	}
-	return ioutil.WriteFile(p.FileTitle, []byte(p.Body), 0600)
+	return ioutil.WriteFile(o.FileTitle, []byte(o.Body), 0600)
 }
 
 // load read person info after NewObject() generate the p
-func load(p *Object) (*Object, error) {
-	body, err := ioutil.ReadFile(p.FileTitle)
+func load(o *Object) (*Object, error) {
+	body, err := ioutil.ReadFile(o.FileTitle)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return p, err
+			return o, err
 		}
 		return nil, err
 	}
-	p.Body = string(body)
-	return p, nil
+	o.Body = string(body)
+	return o, nil
 }

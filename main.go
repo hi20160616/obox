@@ -17,6 +17,7 @@ func main() {
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 	http.HandleFunc("/upload/", makeHandler(uploadHandler))
+	http.HandleFunc("/del/", delHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

@@ -23,3 +23,18 @@ func TestEditHandler(t *testing.T) {
 	fmt.Println(resp.Header.Get("Content-Type"))
 	fmt.Println(string(body))
 }
+
+func TestDelHandler(t *testing.T) {
+	handler := http.HandlerFunc(delHandler)
+
+	req := httptest.NewRequest("GET", "http://localhost:8080/del/FrontObject/1024px-WoW_icon.png", nil)
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	resp := w.Result()
+	body, _ := io.ReadAll(resp.Body)
+
+	fmt.Println(resp.StatusCode)
+	fmt.Println(resp.Header.Get("Content-Type"))
+	fmt.Println(string(body))
+}

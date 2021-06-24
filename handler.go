@@ -8,9 +8,32 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/pkg/errors"
 )
+
+var validPath = regexp.MustCompile("^/(edit|save|view|upload|del)/(.+)$")
+
+type ObjHandler struct {
+	req *http.Request
+	obj *Object
+}
+
+func makeHandler(fn func(http.ResponseWriter, *http.Request, *Object)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		m := validPath.FindStringSubmatch(r.URL.Path)
+		if m == nil {
+			http.NotFound(w, r)
+			return
+		}
+		o, err := NewObject(m[2])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		fn(w, r, o)
+	}
+}
 
 func viewHandler(w http.ResponseWriter, r *http.Request, o *Object) {
 	o, err := load(o)
@@ -29,6 +52,10 @@ func viewHandler(w http.ResponseWriter, r *http.Request, o *Object) {
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request, o *Object) {
+	if o.Err != nil {
+		Derive(w, "edit", o)
+		return
+	}
 	o, err := load(o)
 	if err != nil {
 		o.Err = err
@@ -91,15 +118,30 @@ func uploadHandler(w http.ResponseWriter, r *http.Request, o *Object) {
 	Derive(w, "edit", o)
 }
 
-func saveHandler(w http.ResponseWriter, r *http.Request, p *Object) {
-	p.Body = r.FormValue("body")
+func delHandler(w http.ResponseWriter, r *http.Request) {
+	ss := strings.Split(r.URL.Path, "/")
+	if len(ss) >= 4 {
+		if err := os.Remove(filepath.Join(configs.dataPath, ss[2], ss[3])); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
 
-	// p := &Object{Title: title, Body: body}
-	if err := save(p); err != nil {
+	o, err := NewObject(ss[2])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	editHandler(w, r, o)
+}
+
+func saveHandler(w http.ResponseWriter, r *http.Request, o *Object) {
+	o.Body = r.FormValue("body")
+
+	// o := &Object{Title: title, Body: body}
+	if err := save(o); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/view/"+p.Title, http.StatusFound)
+	http.Redirect(w, r, "/view/"+o.Title, http.StatusFound)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -108,23 +150,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	viewHandler(w, r, p)
-}
-
-var validPath = regexp.MustCompile("^/(edit|save|view|upload)/(.+)$")
-
-func makeHandler(fn func(http.ResponseWriter, *http.Request, *Object)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		m := validPath.FindStringSubmatch(r.URL.Path)
-		if m == nil {
-			http.NotFound(w, r)
-			return
-		}
-		p, err := NewObject(m[2])
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		fn(w, r, p)
-	}
 }
 
 // walk2 is encapsulated walk, that append fileinfos to o.Data
@@ -141,18 +166,17 @@ func walk2(o *Object) (*Object, error) {
 
 // walk get all files info in o.Folder
 func walk(o *Object) ([]fs.FileInfo, error) {
-	subDirToSkip := "skip"
 	files := []fs.FileInfo{}
 	err := filepath.Walk(o.Folder, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
 			return err
 		}
-		if info.IsDir() && info.Name() == subDirToSkip {
-			fmt.Printf("skipping a dir without errors: %+v \n", info.Name())
-			return filepath.SkipDir
+
+		if !info.IsDir() && filepath.Ext(path) != ".md" {
+			files = append(files, info)
 		}
-		files = append(files, info)
+
 		return nil
 	})
 	if err != nil {
