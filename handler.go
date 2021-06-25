@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"io/fs"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -16,8 +14,9 @@ import (
 var validPath = regexp.MustCompile("^/(edit|save|view|upload|del)/(.+)$")
 
 type ObjHandler struct {
-	req *http.Request
-	obj *Object
+	Title string
+	Req   *http.Request
+	Obj   *Object
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, *Object)) http.HandlerFunc {
@@ -33,20 +32,6 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, *Object)) http.Hand
 		}
 		fn(w, r, o)
 	}
-}
-
-func listHandler(w http.ResponseWriter, r *http.Request) {
-	objs := &Objects{Title: "Objects list"}
-	dirs, err := os.ReadDir(configs.dataPath)
-	if err != nil {
-		fmt.Printf("error walking the path %q: %v\n", configs.dataPath, err)
-	}
-	for _, dir := range dirs {
-		if dir.IsDir() {
-			objs.Data = append(objs.Data, dir.Name())
-		}
-	}
-	DeriveList(w, objs)
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request, o *Object) {
@@ -159,43 +144,20 @@ func saveHandler(w http.ResponseWriter, r *http.Request, o *Object) {
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	p, err := NewObject("FrontObject")
+	hp, err := loadHomePage()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	viewHandler(w, r, p)
+	DeriveHome(w, hp)
 }
 
-// walk2 is encapsulated walk, that append fileinfos to o.Data
-func walk2(o *Object) (*Object, error) {
-	files, err := walk(o)
+func listHandler(w http.ResponseWriter, r *http.Request) {
+	objs, err := listObjects()
 	if err != nil {
-		return nil, err
+		objs.Err = err
+		DeriveList(w, objs)
+		return
 	}
-	for _, file := range files {
-		o.Data = append(o.Data, file)
-	}
-	return o, nil
-}
-
-// walk get all files info in o.Folder
-func walk(o *Object) ([]fs.FileInfo, error) {
-	files := []fs.FileInfo{}
-	err := filepath.Walk(o.Folder, func(path string, info fs.FileInfo, err error) error {
-		if err != nil {
-			fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
-			return err
-		}
-
-		if !info.IsDir() && filepath.Ext(path) != ".md" {
-			files = append(files, info)
-		}
-
-		return nil
-	})
-	if err != nil {
-		fmt.Printf("error walking the path %q: %v\n", o.Folder, err)
-		return nil, err
-	}
-	return files, nil
+	DeriveList(w, objs)
 }

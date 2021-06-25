@@ -56,14 +56,21 @@ func markdown(in string) (string, error) {
 func Derive(w http.ResponseWriter, tmpl string, o *Object) {
 	if err := templates.ExecuteTemplate(w, tmpl+".html", o); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("err template: %s.html\n\terror: %v", tmpl, err)
+		log.Printf("%v", err)
 	}
 }
 
 func DeriveList(w http.ResponseWriter, os *Objects) {
 	if err := templates.ExecuteTemplate(w, "list.html", os); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("err template: list.html\n\terror: %v", err)
+		log.Printf("%v", err)
+	}
+}
+
+func DeriveHome(w http.ResponseWriter, hp *Object) {
+	if err := templates.ExecuteTemplate(w, "home.html", hp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("%v", err)
 	}
 }
 

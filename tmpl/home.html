@@ -1,0 +1,54 @@
+{{template "header" .}}
+{{template "alerts" .}}
+<p>[<a href="/edit/{{.Title}}">edit</a>]</p>
+<div>
+	{{markdown .Body}}
+</div>
+{{$atts := index .Data 0}}
+{{if $atts}}
+<table class="table table-hover caption-top">
+    <caption>List of attachments</caption>
+    <thead>
+	<tr>
+	    <th scope="col">#</th>
+	    <th scope="col">Title</th>
+	    <th scope="col">Size</th>
+	    <th scope="col">Update Time</th>
+	</tr>
+    </thead>
+    <tbody>
+	{{range $i, $data := $atts}}
+	<tr>
+	    <th scope="row">{{plusOne $i}}</th>
+	    <td><a href="/view/{{$data.Name}}" target="_blank">{{$data.Name}}</a></td>
+	    <td>{{byteCountSI $data.Size}}</td>
+	    <td>{{smartTime $data.ModTime}}</td>
+	</tr>
+	{{end}}
+    </tbody>
+</table>
+{{end}}
+
+{{$objs := index .Data 1}}
+{{if $objs}}
+<table class="table table-hover caption-top">
+    <caption>List Of Objects</caption>
+    <thead>
+	<tr>
+	    <th scope="col">#</th>
+	    <th scope="col">Title</th>
+	    <th scope="col">Options</th>
+	</tr>
+    </thead>
+    <tbody>
+	{{range $i, $data := $objs.Data}}
+	<tr>
+	    <th scope="row">{{plusOne $i}}</th>
+	    <td><a href="/view/{{$data}}" target="_blank">{{$data}}</a></td>
+	    <td><a href="/delobj/{{$data}}" target="_blank">Delete</a></td>
+	</tr>
+	{{end}}
+    </tbody>
+</table>
+{{end}}
+{{template "footer" .}}
