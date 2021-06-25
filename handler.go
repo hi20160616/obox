@@ -34,6 +34,17 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, *Object)) http.Hand
 	}
 }
 
+func newHandler(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+	o, err := NewObject(name)
+	if err != nil {
+		o.Err = err
+		Derive(w, "new", o)
+		return
+	}
+	Derive(w, "new", o)
+}
+
 func viewHandler(w http.ResponseWriter, r *http.Request, o *Object) {
 	o, err := load(o)
 	if err != nil {
