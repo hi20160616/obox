@@ -13,12 +13,6 @@ import (
 
 var validPath = regexp.MustCompile("^/(edit|save|view|upload|del)/(.+)$")
 
-type ObjHandler struct {
-	Title string
-	Req   *http.Request
-	Obj   *Object
-}
-
 func makeHandler(fn func(http.ResponseWriter, *http.Request, *Object)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := validPath.FindStringSubmatch(r.URL.Path)
