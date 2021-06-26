@@ -68,7 +68,7 @@ func NewObject(title string) (*Object, error) {
 		return nil, err
 	}
 	p := &Object{Title: title}
-	p.Folder = filepath.Join(configs.dataPath, title)
+	p.Folder = filepath.Join(configs.DataPath, title)
 	p.FileTitle = filepath.Join(p.Folder, title+".md")
 	return p, nil
 }
@@ -96,9 +96,9 @@ func load(o *Object) (*Object, error) {
 
 func listObjects() (*Objects, error) {
 	objs := &Objects{Title: "Objects list"}
-	dirs, err := os.ReadDir(configs.dataPath)
+	dirs, err := os.ReadDir(configs.DataPath)
 	if err != nil {
-		return nil, fmt.Errorf("error walking the path %q: %v\n", configs.dataPath, err)
+		return nil, fmt.Errorf("error walking the path %q: %v\n", configs.DataPath, err)
 	}
 	for _, dir := range dirs {
 		if dir.IsDir() && strings.ToLower(dir.Name()) != "home" {

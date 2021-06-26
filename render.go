@@ -28,7 +28,7 @@ func init() {
 		"byteCountSI": byteCountSI,
 		"plusOne":     plusOne,
 	})
-	templates = template.Must(templates.ParseFS(tmpl, filepath.Join(configs.tmplPath, "*.html")))
+	templates = template.Must(templates.ParseFS(tmpl, filepath.Join(configs.TmplPath, "*.html")))
 }
 
 // pattern like `[!foobar]` means a inter-page need to be made as link

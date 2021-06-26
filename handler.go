@@ -125,7 +125,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request, o *Object) {
 func delHandler(w http.ResponseWriter, r *http.Request) {
 	ss := strings.Split(r.URL.Path, "/")
 	if len(ss) >= 4 {
-		if err := os.Remove(filepath.Join(configs.dataPath, ss[2], ss[3])); err != nil {
+		if err := os.Remove(filepath.Join(configs.DataPath, ss[2], ss[3])); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
