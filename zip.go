@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -31,7 +30,6 @@ func zipFiles(filesPath, zipPath, passwd string) error {
 				return err
 			}
 			defer r.Close()
-			fmt.Println(path)
 			if passwd == "" {
 				w, err = zipw.Create(path)
 			} else {

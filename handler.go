@@ -151,6 +151,9 @@ func saveHandler(w http.ResponseWriter, r *http.Request, o *Object) {
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	hp, err := loadHomePage()
 	if err != nil {
+		if os.IsNotExist(err) {
+			http.Redirect(w, r, "edit/Home", http.StatusFound)
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
