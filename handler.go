@@ -153,6 +153,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			http.Redirect(w, r, "edit/Home", http.StatusFound)
+			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

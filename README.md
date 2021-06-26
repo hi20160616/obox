@@ -5,4 +5,5 @@ Just an object collector for data files storage.
 
 - [x] upload attachments.
 - [ ] optimized implements to solve load and walk too many times.
-- [ ] use walk instead of recurse in zipWriter
+- [x] use walk instead of recurse in zipWriter
+- [ ] add open and close data to a single cmd exec

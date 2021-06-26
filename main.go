@@ -1,91 +1,71 @@
 package main
 
 import (
-	"bufio"
+	"context"
+	"errors"
 	"fmt"
-	"io/fs"
 	"log"
 	"math/rand"
-	"net/http"
 	"os"
-	"path/filepath"
+	"os/signal"
 	"strconv"
-	"strings"
+	"syscall"
 	"time"
 
-	"github.com/hi20160616/gears"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
-	if err := run(); err != nil {
+	// Valid
+	if err := validPasswd(); err != nil {
 		fmt.Println(err)
 	}
-}
-
-func run() error {
-	if err := validPasswd(); err != nil {
-		return err
+	generatePort := func() string {
+		rand.Seed(time.Now().UnixNano())
+		return strconv.Itoa(rand.Intn(9999))
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
 
-	if err := openData(); err != nil {
-		return err
-	}
-
-	addr := ":" + generatePort()
-	fmt.Println("[*] Server running at", addr)
-
-	prepareHandler()
-	return http.ListenAndServe(addr, nil)
-}
-
-func validPasswd() error {
-	r := bufio.NewReader(os.Stdin)
-	fmt.Print("[!] Enter password: ")
-	pwd, err := r.ReadString('\n')
+	// Web server
+	address := ":" + generatePort()
+	s, err := NewServer(address)
 	if err != nil {
-		return err
+		log.Printf("%v", err)
 	}
-	if configs.Password != strings.TrimSpace(pwd) {
-		fmt.Println("[-] Invalid password!")
-		return validPasswd()
-	}
-	fmt.Println("[+] Pass!")
-	return nil
-}
+	g.Go(func() error {
+		log.Printf("Server start on %s", address)
+		return s.Start(ctx)
+	})
+	g.Go(func() error {
+		defer log.Printf("Server stop done.")
+		<-ctx.Done() // wait for stop signal
+		log.Printf("Server stop now...")
+		return s.Stop(ctx)
+	})
 
-func generatePort() string {
-	rand.Seed(time.Now().UnixNano())
-	return strconv.Itoa(rand.Intn(9999))
-}
+	// Elegant stop
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	g.Go(func() error {
+		select {
+		case sig := <-sigs:
+			fmt.Println()
+			log.Printf("signal caught: %s, ready to quit...", sig.String())
+			cancel()
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+		return nil
+	})
 
-func prepareHandler() {
-	fs1, err := fs.Sub(tmpl, configs.TmplPath+"/bootstrap")
-	if err != nil {
-		log.Println(err)
+	// Err treat
+	if err := g.Wait(); err != nil {
+		if !errors.Is(err, context.Canceled) {
+			log.Printf("not canceled by context: %s", err)
+		} else {
+			log.Println(err)
+		}
 	}
-	http.Handle("/s/", http.StripPrefix("/s/", http.FileServer(http.FS(fs1))))
-	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/view/", makeHandler(viewHandler))
-	http.HandleFunc("/edit/", makeHandler(editHandler))
-	http.HandleFunc("/save/", makeHandler(saveHandler))
-	http.HandleFunc("/upload/", makeHandler(uploadHandler))
-	http.HandleFunc("/del/", delHandler)
-	http.HandleFunc("/list/", listHandler)
-	http.HandleFunc("/new/", newHandler)
-}
-
-func openData() error {
-	if gears.Exists(filepath.Join(configs.RootPath, "data.db")) {
-		return unzipFiles("data.db", configs.RootPath, configs.Password)
-	}
-	return nil
-}
-
-func closeData() error {
-	if err := zipFiles(configs.DataPath,
-		filepath.Join(configs.RootPath, "data.db"),
-		configs.Password); err != nil {
-		return err
-	}
-	return os.RemoveAll(filepath.Join(configs.RootPath, configs.DataPath))
 }
