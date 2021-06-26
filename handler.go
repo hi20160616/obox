@@ -113,13 +113,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request, o *Object) {
 		return
 	}
 
-	o, err := walk2(o)
-	if err != nil {
-		o.Err = err
-		Derive(w, "edit", o)
-		return
-	}
-	Derive(w, "edit", o)
+	editHandler(w, r, o)
 }
 
 func delHandler(w http.ResponseWriter, r *http.Request) {
