@@ -1,4 +1,4 @@
-package main
+package data
 
 import (
 	"errors"
@@ -8,7 +8,10 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+
+	"github.com/hi20160616/obox/configs"
 )
 
 type Object struct {
@@ -34,16 +37,31 @@ type HomePage struct {
 	Info                           string
 }
 
-func loadHomePage() (*Object, error) {
+// pattern like `[!foobar]` means a inter-page need to be made as link
+var innerObject = regexp.MustCompile(`\[!.+\]`)
+
+func InnerLink(body string) string {
+	repl := func(pagename string) string {
+		pagename = pagename[2 : len(pagename)-1]
+		origin := pagename
+		pagename = strings.ReplaceAll(pagename, " ", "-")
+		return fmt.Sprintf("[%s](/view/%s)", origin, pagename)
+	}
+
+	return innerObject.ReplaceAllStringFunc(body, repl)
+}
+
+func LoadHomePage() (*Object, error) {
 	o, err := NewObject("Home")
 	if err != nil {
 		return nil, err
 	}
-	o, err = load(o)
+	o, err = Load(o)
 	if err != nil {
 		return nil, err
 	}
-	o.Body = innerLink(o.Body)
+	// TODO: innerLink invoke and use in render
+	o.Body = InnerLink(o.Body)
 	// list home attachments
 	files, err := walk(o)
 	if err != nil {
@@ -54,7 +72,7 @@ func loadHomePage() (*Object, error) {
 		Atts = append(Atts, file)
 	}
 	// list objects
-	Objs, err := listObjects()
+	Objs, err := ListObjects()
 	if err != nil {
 		return nil, err
 	}
@@ -68,13 +86,13 @@ func NewObject(title string) (*Object, error) {
 		return nil, err
 	}
 	p := &Object{Title: title}
-	p.Folder = filepath.Join(configs.DataPath, title)
+	p.Folder = filepath.Join(configs.Data.DataPath, title)
 	p.FileTitle = filepath.Join(p.Folder, title+".md")
 	return p, nil
 }
 
-// save write done Body after NewObject() generate the p
-func save(o *Object) error {
+// Save write done Body after NewObject() generate the p
+func Save(o *Object) error {
 	if _, err := os.Stat(o.Folder); err != nil && os.IsNotExist(err) {
 		os.MkdirAll(o.Folder, 0755)
 	}
@@ -82,7 +100,7 @@ func save(o *Object) error {
 }
 
 // load read person info after NewObject() generate the p
-func load(o *Object) (*Object, error) {
+func Load(o *Object) (*Object, error) {
 	body, err := ioutil.ReadFile(o.FileTitle)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -94,11 +112,11 @@ func load(o *Object) (*Object, error) {
 	return o, nil
 }
 
-func listObjects() (*Objects, error) {
+func ListObjects() (*Objects, error) {
 	objs := &Objects{Title: "Objects list"}
-	dirs, err := os.ReadDir(configs.DataPath)
+	dirs, err := os.ReadDir(configs.Data.DataPath)
 	if err != nil {
-		return nil, fmt.Errorf("error walking the path %q: %v\n", configs.DataPath, err)
+		return nil, fmt.Errorf("error walking the path %q: %v\n", configs.Data.DataPath, err)
 	}
 	for _, dir := range dirs {
 		if dir.IsDir() && strings.ToLower(dir.Name()) != "home" {
@@ -108,8 +126,8 @@ func listObjects() (*Objects, error) {
 	return objs, nil
 }
 
-// walk2 is encapsulated walk, that append fileinfos to o.Data
-func walk2(o *Object) (*Object, error) {
+// Walk2 is encapsulated walk, that append fileinfos to o.Data
+func Walk2(o *Object) (*Object, error) {
 	files, err := walk(o)
 	if err != nil {
 		return nil, err

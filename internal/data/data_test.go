@@ -1,4 +1,4 @@
-package main
+package data
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 )
 
 func TestLoadHomePage(t *testing.T) {
-	o, err := loadHomePage()
+	o, err := LoadHomePage()
 	if err != nil {
 		t.Error(err)
 	}

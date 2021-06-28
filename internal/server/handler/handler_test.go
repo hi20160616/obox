@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 
 // https://golang.org/pkg/net/http/httptest/#example_Server
 func TestEditHandler(t *testing.T) {
-	handler := http.HandlerFunc(makeHandler(editHandler))
+	handler := http.HandlerFunc(MakeHandler(EditHandler))
 
 	req := httptest.NewRequest("GET", "http://localhost:8080/edit/TestObject", nil)
 	w := httptest.NewRecorder()
@@ -25,7 +25,7 @@ func TestEditHandler(t *testing.T) {
 }
 
 func TestDelHandler(t *testing.T) {
-	handler := http.HandlerFunc(delHandler)
+	handler := http.HandlerFunc(DelHandler)
 
 	req := httptest.NewRequest("GET", "http://localhost:8080/del/FrontObject/1024px-WoW_icon.png", nil)
 	w := httptest.NewRecorder()

@@ -1,22 +1,17 @@
-package main
+package render
 
 import (
 	"bytes"
-	"embed"
 	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
-	"regexp"
-	"strings"
 	"text/template"
 	"time"
 
+	"github.com/hi20160616/obox/internal/data"
+	"github.com/hi20160616/obox/tmpl"
 	"github.com/yuin/goldmark"
 )
-
-//go:embed tmpl
-var tmpl embed.FS
 
 // var templates = template.Must(template.ParseFS(tmpl, filepath.Join(tmplPath, "*.html")))
 var templates = template.New("")
@@ -28,21 +23,7 @@ func init() {
 		"byteCountSI": byteCountSI,
 		"plusOne":     plusOne,
 	})
-	templates = template.Must(templates.ParseFS(tmpl, filepath.Join(configs.TmplPath, "*.html")))
-}
-
-// pattern like `[!foobar]` means a inter-page need to be made as link
-var innerObject = regexp.MustCompile(`\[!.+\]`)
-
-func innerLink(body string) string {
-	repl := func(pagename string) string {
-		pagename = pagename[2 : len(pagename)-1]
-		origin := pagename
-		pagename = strings.ReplaceAll(pagename, " ", "-")
-		return fmt.Sprintf("[%s](/view/%s)", origin, pagename)
-	}
-
-	return innerObject.ReplaceAllStringFunc(body, repl)
+	templates = template.Must(templates.ParseFS(tmpl.FS, "*.html"))
 }
 
 func markdown(in string) (string, error) {
@@ -53,21 +34,21 @@ func markdown(in string) (string, error) {
 	return buf.String(), nil
 }
 
-func Derive(w http.ResponseWriter, tmpl string, o *Object) {
-	if err := templates.ExecuteTemplate(w, tmpl+".html", o); err != nil {
+func Derive(w http.ResponseWriter, tmplName string, o *data.Object) {
+	if err := templates.ExecuteTemplate(w, tmplName+".html", o); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("%v", err)
 	}
 }
 
-func DeriveList(w http.ResponseWriter, os *Objects) {
+func DeriveList(w http.ResponseWriter, os *data.Objects) {
 	if err := templates.ExecuteTemplate(w, "list.html", os); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("%v", err)
 	}
 }
 
-func DeriveHome(w http.ResponseWriter, hp *Object) {
+func DeriveHome(w http.ResponseWriter, hp *data.Object) {
 	if err := templates.ExecuteTemplate(w, "home.html", hp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("%v", err)

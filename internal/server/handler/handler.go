@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"io/ioutil"
@@ -8,19 +8,22 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hi20160616/obox/configs"
+	"github.com/hi20160616/obox/internal/data"
+	"github.com/hi20160616/obox/internal/server/render"
 	"github.com/pkg/errors"
 )
 
 var validPath = regexp.MustCompile("^/(edit|save|view|upload|del)/(.+)$")
 
-func makeHandler(fn func(http.ResponseWriter, *http.Request, *Object)) http.HandlerFunc {
+func MakeHandler(fn func(http.ResponseWriter, *http.Request, *data.Object)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m := validPath.FindStringSubmatch(r.URL.Path)
 		if m == nil {
 			http.NotFound(w, r)
 			return
 		}
-		o, err := NewObject(m[2])
+		o, err := data.NewObject(m[2])
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -28,54 +31,54 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, *Object)) http.Hand
 	}
 }
 
-func newHandler(w http.ResponseWriter, r *http.Request) {
+func NewHandler(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
-	o, err := NewObject(name)
+	o, err := data.NewObject(name)
 	if err != nil {
 		o.Err = err
-		Derive(w, "new", o)
+		render.Derive(w, "new", o)
 		return
 	}
-	Derive(w, "new", o)
+	render.Derive(w, "new", o)
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request, o *Object) {
-	o, err := load(o)
+func ViewHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
+	o, err := data.Load(o)
 	if err != nil {
 		http.Redirect(w, r, "/edit/"+o.Title, http.StatusFound)
 		return
 	}
-	o.Body = innerLink(o.Body)
-	o, err = walk2(o)
+	o.Body = data.InnerLink(o.Body)
+	o, err = data.Walk2(o)
 	if err != nil {
 		o.Err = err
-		Derive(w, "view", o)
+		render.Derive(w, "view", o)
 		return
 	}
-	Derive(w, "view", o)
+	render.Derive(w, "view", o)
 }
 
-func editHandler(w http.ResponseWriter, r *http.Request, o *Object) {
+func EditHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
 	if o.Err != nil {
-		Derive(w, "edit", o)
+		render.Derive(w, "edit", o)
 		return
 	}
-	o, err := load(o)
+	o, err := data.Load(o)
 	if err != nil {
 		o.Err = err
-		Derive(w, "edit", o)
+		render.Derive(w, "edit", o)
 		return
 	}
-	o, err = walk2(o)
+	o, err = data.Walk2(o)
 	if err != nil {
 		o.Err = err
-		Derive(w, "edit", o)
+		render.Derive(w, "edit", o)
 		return
 	}
-	Derive(w, "edit", o)
+	render.Derive(w, "edit", o)
 }
 
-func uploadHandler(w http.ResponseWriter, r *http.Request, o *Object) {
+func UploadHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
 	upload := func() error {
 		// Parse our multipart form, 10 << 20 specifies a maximum
 		// upload of 10 MB files.
@@ -109,41 +112,41 @@ func uploadHandler(w http.ResponseWriter, r *http.Request, o *Object) {
 
 	if err := upload(); err != nil {
 		o.Err = err
-		Derive(w, "edit", o)
+		render.Derive(w, "edit", o)
 		return
 	}
 
-	editHandler(w, r, o)
+	EditHandler(w, r, o)
 }
 
-func delHandler(w http.ResponseWriter, r *http.Request) {
+func DelHandler(w http.ResponseWriter, r *http.Request) {
 	ss := strings.Split(r.URL.Path, "/")
 	if len(ss) >= 4 {
-		if err := os.Remove(filepath.Join(configs.DataPath, ss[2], ss[3])); err != nil {
+		if err := os.Remove(filepath.Join(configs.Data.DataPath, ss[2], ss[3])); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 
-	o, err := NewObject(ss[2])
+	o, err := data.NewObject(ss[2])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	editHandler(w, r, o)
+	EditHandler(w, r, o)
 }
 
-func saveHandler(w http.ResponseWriter, r *http.Request, o *Object) {
+func SaveHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
 	o.Body = r.FormValue("body")
 
 	// o := &Object{Title: title, Body: body}
-	if err := save(o); err != nil {
+	if err := data.Save(o); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/view/"+o.Title, http.StatusFound)
 }
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	hp, err := loadHomePage()
+func HomeHandler(w http.ResponseWriter, r *http.Request) {
+	hp, err := data.LoadHomePage()
 	if err != nil {
 		if os.IsNotExist(err) {
 			http.Redirect(w, r, "edit/Home", http.StatusFound)
@@ -152,15 +155,15 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	DeriveHome(w, hp)
+	render.DeriveHome(w, hp)
 }
 
-func listHandler(w http.ResponseWriter, r *http.Request) {
-	objs, err := listObjects()
+func ListHandler(w http.ResponseWriter, r *http.Request) {
+	objs, err := data.ListObjects()
 	if err != nil {
 		objs.Err = err
-		DeriveList(w, objs)
+		render.DeriveList(w, objs)
 		return
 	}
-	DeriveList(w, objs)
+	render.DeriveList(w, objs)
 }

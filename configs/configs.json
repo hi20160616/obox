@@ -1,5 +1,5 @@
 {
-	"DataPath": "data",
+	"DataPath": "db",
 	"TmplPath": "tmpl",
 	"Password": "password"
 }

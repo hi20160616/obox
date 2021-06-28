@@ -1,4 +1,4 @@
-package main
+package data
 
 import (
 	"io"
@@ -10,7 +10,7 @@ import (
 	"github.com/alexmullins/zip"
 )
 
-func zipFiles(filesPath, zipPath, passwd string) error {
+func ZipFiles(filesPath, zipPath, passwd string) error {
 	zipFile, err := os.Create(zipPath)
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func addFiles(w *zip.Writer, basePath, baseInZip, passwd string) error {
 	return nil
 }
 
-func unzipFiles(inPath, outPath, passwd string) error {
+func UnzipFiles(inPath, outPath, passwd string) error {
 	r, err := zip.OpenReader(inPath)
 	if err != nil {
 		return err

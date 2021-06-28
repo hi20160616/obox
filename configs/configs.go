@@ -1,4 +1,4 @@
-package main
+package configs
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-var configs = &configuration{}
+var Data = &configuration{}
 
 type configuration struct {
 	RootPath, DataPath, TmplPath, Password string
@@ -19,12 +19,12 @@ func init() {
 		log.Printf("config Getwd: %#v", err)
 	}
 	// root = "../../../" // for test handler
-	f, err := os.ReadFile(filepath.Join(root, "configs.json"))
+	f, err := os.ReadFile(filepath.Join(root, "configs/configs.json"))
 	if err != nil {
 		log.Printf("config ReadFile: %#v", err)
 	}
-	if err = json.Unmarshal(f, configs); err != nil {
+	if err = json.Unmarshal(f, Data); err != nil {
 		log.Printf("config Unmarshal err: %#v", err)
 	}
-	configs.RootPath = root
+	Data.RootPath = root
 }

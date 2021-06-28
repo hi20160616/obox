@@ -12,12 +12,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/hi20160616/obox/internal/server"
 	"golang.org/x/sync/errgroup"
 )
 
 func main() {
 	// Valid
-	if err := validPasswd(); err != nil {
+	if err := server.ValidPasswd(); err != nil {
 		fmt.Println(err)
 	}
 	generatePort := func() string {
@@ -30,7 +31,7 @@ func main() {
 
 	// Web server
 	address := ":" + generatePort()
-	s, err := NewServer(address)
+	s, err := server.NewServer(address)
 	if err != nil {
 		log.Printf("%v", err)
 	}
