@@ -48,8 +48,8 @@ func ZipFiles(filesPath, zipPath, passwd string) error {
 	})
 }
 
-// zipWriter zip files in inPath to outPath, notice: outPath contains zip file name
-func zipFiles2(inPath, outPath, passwd string) error {
+// ZipWriter zip files in inPath to outPath, notice: outPath contains zip file name
+func ZipFiles2(inPath, outPath, passwd string) error {
 	outFile, err := os.Create(outPath)
 	if err != nil {
 		return err
@@ -114,13 +114,12 @@ func UnzipFiles(inPath, outPath, passwd string) error {
 		if f.IsEncrypted() {
 			f.SetPassword(passwd)
 		}
-		fp := filepath.Join(outPath, f.Name)
-		dir, _ := filepath.Split(fp)
+		dir, _ := filepath.Split(f.Name)
 		err = os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
 			return err
 		}
-		w, err := os.Create(fp)
+		w, err := os.Create(f.Name)
 		if err != nil {
 			return err
 		}

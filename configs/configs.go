@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var Data = &configuration{}
@@ -14,11 +15,16 @@ type configuration struct {
 }
 
 func init() {
-	root, err := os.Getwd()
-	if err != nil {
-		log.Printf("config Getwd: %#v", err)
+	var root string
+	var err error
+	if strings.Contains(os.Args[0], ".test") {
+		root = "../../" // for test dbmanager
+	} else {
+		root, err = os.Getwd()
+		if err != nil {
+			log.Printf("config Getwd: %#v", err)
+		}
 	}
-	// root = "../../../" // for test handler
 	f, err := os.ReadFile(filepath.Join(root, "configs/configs.json"))
 	if err != nil {
 		log.Printf("config ReadFile: %#v", err)

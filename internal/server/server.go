@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/hi20160616/gears"
 	"github.com/hi20160616/obox/configs"
-	"github.com/hi20160616/obox/internal/data"
 	"github.com/hi20160616/obox/internal/server/handler"
 	"github.com/hi20160616/obox/tmpl"
 )
@@ -71,20 +68,4 @@ func GetHandler() *http.ServeMux {
 	mux.HandleFunc("/list/", handler.ListHandler)
 	mux.HandleFunc("/new/", handler.NewHandler)
 	return mux
-}
-
-func openData() error {
-	if gears.Exists(filepath.Join(configs.Data.RootPath, "data.db")) {
-		return data.UnzipFiles("data.db", configs.Data.RootPath, configs.Data.Password)
-	}
-	return nil
-}
-
-func closeData() error {
-	if err := data.ZipFiles(configs.Data.DataPath,
-		filepath.Join(configs.Data.RootPath, "data.db"),
-		configs.Data.Password); err != nil {
-		return err
-	}
-	return os.RemoveAll(filepath.Join(configs.Data.RootPath, configs.Data.DataPath))
 }
