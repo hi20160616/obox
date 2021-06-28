@@ -29,6 +29,8 @@ archives:
   - 
     files:
       - configs/configs.json
+      - README.md
+      - LICENSE
     replacements:
       darwin: Darwin
       linux: Linux
