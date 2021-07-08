@@ -11,7 +11,7 @@ import (
 var Data = &configuration{}
 
 type configuration struct {
-	RootPath, DataPath, TmplPath, Password string
+	RootPath, DataPath, TmplPath, Password, Address string
 }
 
 func init() {

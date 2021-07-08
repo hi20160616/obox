@@ -1,5 +1,6 @@
 {
 	"DataPath": "db",
 	"TmplPath": "tmpl",
-	"Password": "password"
+	"Password": "password",
+	"Address": "0.0.0.0:80"
 }
