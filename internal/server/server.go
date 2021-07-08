@@ -1,9 +1,12 @@
 package server
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"runtime"
 	"strings"
 
 	"github.com/hi20160616/obox/configs"
@@ -41,13 +44,26 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 func ValidPasswd() error {
+	var (
+		pwd string = ""
+		err error
+	)
 	fmt.Print("[!] Enter password: ")
-	pwd, err := terminal.ReadPassword(0)
-	if err != nil {
-		return err
+	if runtime.GOOS == "windows" {
+		r := bufio.NewReader(os.Stdin)
+		pwd, err = r.ReadString('\n')
+		if err != nil {
+			return err
+		}
+	} else {
+		b, err := terminal.ReadPassword(0)
+		if err != nil {
+			return err
+		}
+		pwd = string(b)
 	}
-	if configs.Data.Password != strings.TrimSpace(string(pwd)) {
-		fmt.Println("[-] Invalid password!")
+	if configs.Data.Password != strings.TrimSpace(pwd) {
+		fmt.Println("\n[-] Invalid password!")
 		return ValidPasswd()
 	}
 	fmt.Println("\n[+] Pass!")
@@ -57,6 +73,7 @@ func ValidPasswd() error {
 func GetHandler() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("/s/", http.StripPrefix("/s/", http.FileServer(http.FS(tmpl.FS))))
+	mux.Handle("/src/", http.StripPrefix("/src/", http.FileServer(http.Dir(configs.Data.DataPath))))
 	mux.HandleFunc("/", handler.HomeHandler)
 	mux.HandleFunc("/view/", handler.MakeHandler(handler.ViewHandler))
 	mux.HandleFunc("/edit/", handler.MakeHandler(handler.EditHandler))

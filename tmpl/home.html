@@ -20,7 +20,7 @@
 	{{range $i, $data := $atts}}
 	<tr>
 	    <th scope="row">{{plusOne $i}}</th>
-	    <td><a href="/view/{{$data.Name}}" target="_blank">{{$data.Name}}</a></td>
+	    <td><a href="/src/Home/{{$data.Name}}" target="_blank">{{$data.Name}}</a></td>
 	    <td>{{byteCountSI $data.Size}}</td>
 	    <td>{{smartTime $data.ModTime}}</td>
 	</tr>

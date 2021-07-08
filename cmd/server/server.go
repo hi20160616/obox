@@ -18,6 +18,9 @@ func main() {
 	// Valid
 	if err := server.ValidPasswd(); err != nil {
 		fmt.Println(err)
+		// fmt.Println("Press the Enter Key to exit anyway.")
+		// fmt.Scanln()
+		// os.Exit(1)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
