@@ -12,7 +12,7 @@
 	{{range $i, $data := .Data}}
 	<tr>
 	    <th scope="row">{{plusOne $i}}</th>
-	    <td><a href="/src/{{.Title}}/{{$data}}" target="_blank">{{$data}}</a></td>
+	    <td><a href="/view/{{$data}}" target="_blank">{{$data}}</a></td>
 	</tr>
 	{{end}}
     </tbody>
