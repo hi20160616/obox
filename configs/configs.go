@@ -11,7 +11,8 @@ import (
 var Data = &configuration{}
 
 type configuration struct {
-	RootPath, DataPath, TmplPath, Password, Address string
+	RootPath, DataPath, Password, Address string
+	UploadOverwrite                       bool
 }
 
 func init() {

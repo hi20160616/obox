@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hi20160616/gears"
 	"github.com/hi20160616/obox/configs"
 	"github.com/hi20160616/obox/internal/data"
 	"github.com/hi20160616/obox/internal/server/render"
@@ -88,6 +89,12 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
 			return errors.WithMessage(err, "Error Retrieving the File")
 		}
 		defer file.Close()
+		saveFilePath := filepath.Join(o.Folder, handler.Filename)
+		if !configs.Data.UploadOverwrite {
+			if gears.Exists(saveFilePath) {
+				saveFilePath = filepath.Join(o.Folder, "_"+handler.Filename)
+			}
+		}
 		f, err := os.Create(filepath.Join(o.Folder, handler.Filename))
 		if err != nil {
 			return errors.WithMessagef(err, "Cannot create file as %s",
