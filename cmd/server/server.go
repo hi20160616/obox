@@ -5,12 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
-	"time"
 
 	"github.com/hi20160616/obox/internal/server"
 	"golang.org/x/sync/errgroup"
@@ -21,16 +18,16 @@ func main() {
 	if err := server.ValidPasswd(); err != nil {
 		fmt.Println(err)
 	}
-	generatePort := func() string {
-		rand.Seed(time.Now().UnixNano())
-		return strconv.Itoa(rand.Intn(9999))
-	}
+	// randNum := func() string {
+	//         rand.Seed(time.Now().UnixNano())
+	//         return strconv.Itoa(rand.Intn(99999))
+	// }
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Web server
-	address := ":" + generatePort()
+	address := ":80"
 	s, err := server.NewServer(address)
 	if err != nil {
 		log.Printf("%v", err)

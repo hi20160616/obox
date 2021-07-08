@@ -1,16 +1,15 @@
 package server
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/hi20160616/obox/configs"
 	"github.com/hi20160616/obox/internal/server/handler"
 	"github.com/hi20160616/obox/tmpl"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 var addr string
@@ -42,13 +41,12 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 func ValidPasswd() error {
-	r := bufio.NewReader(os.Stdin)
 	fmt.Print("[!] Enter password: ")
-	pwd, err := r.ReadString('\n')
+	pwd, err := terminal.ReadPassword(0)
 	if err != nil {
 		return err
 	}
-	if configs.Data.Password != strings.TrimSpace(pwd) {
+	if configs.Data.Password != strings.TrimSpace(string(pwd)) {
 		fmt.Println("[-] Invalid password!")
 		return ValidPasswd()
 	}
