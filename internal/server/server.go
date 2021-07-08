@@ -50,7 +50,7 @@ func ValidPasswd() error {
 		fmt.Println("[-] Invalid password!")
 		return ValidPasswd()
 	}
-	fmt.Println("[+] Pass!")
+	fmt.Println("\n[+] Pass!")
 	return nil
 }
 
