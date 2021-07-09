@@ -50,7 +50,7 @@ func ViewHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
 		return
 	}
 	o.Body = data.InnerLink(o.Body)
-	o, err = data.Walk2(o)
+	o, err = data.ListAttachments(o)
 	if err != nil {
 		o.Err = err
 		render.Derive(w, "view", o)
@@ -70,7 +70,7 @@ func EditHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
 		render.Derive(w, "edit", o)
 		return
 	}
-	o, err = data.Walk2(o)
+	o, err = data.ListAttachments(o)
 	if err != nil {
 		o.Err = err
 		render.Derive(w, "edit", o)

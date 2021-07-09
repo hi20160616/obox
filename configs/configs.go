@@ -12,7 +12,7 @@ var Data = &configuration{}
 
 type configuration struct {
 	RootPath, DataPath, Password, Address string
-	UploadOverwrite                       bool
+	UploadOverwrite, RecurseDir           bool
 }
 
 func init() {

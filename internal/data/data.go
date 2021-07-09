@@ -63,7 +63,7 @@ func LoadHomePage() (*Object, error) {
 	// TODO: innerLink invoke and use in render
 	o.Body = InnerLink(o.Body)
 	// list home attachments
-	files, err := walk(o)
+	files, err := listAttachments(o)
 	if err != nil {
 		return nil, err
 	}
@@ -126,8 +126,22 @@ func ListObjects() (*Objects, error) {
 	return objs, nil
 }
 
+func ListAttachments(o *Object) (*Object, error) {
+	if configs.Data.RecurseDir {
+		return walk2(o)
+	}
+	return readDir2(o)
+}
+
+func listAttachments(o *Object) ([]fs.FileInfo, error) {
+	if configs.Data.RecurseDir {
+		return walk(o)
+	}
+	return readDir(o)
+}
+
 // Walk2 is encapsulated walk, that append fileinfos to o.Data
-func Walk2(o *Object) (*Object, error) {
+func walk2(o *Object) (*Object, error) {
 	files, err := walk(o)
 	if err != nil {
 		return nil, err
@@ -158,4 +172,34 @@ func walk(o *Object) ([]fs.FileInfo, error) {
 		return nil, err
 	}
 	return files, nil
+}
+
+func readDir2(o *Object) (*Object, error) {
+	files, err := readDir(o)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range files {
+		o.Data = append(o.Data, f)
+	}
+	return o, nil
+}
+
+func readDir(o *Object) ([]fs.FileInfo, error) {
+	files, err := os.ReadDir(o.Folder)
+	if err != nil {
+		return nil, err
+	}
+	rt := []fs.FileInfo{}
+	for _, file := range files {
+		fname := file.Name()
+		if file.Type().IsRegular() && filepath.Ext(fname) != ".md" && fname[:1] != "." {
+			f, err := file.Info()
+			if err != nil {
+				return nil, err
+			}
+			rt = append(rt, f)
+		}
+	}
+	return rt, nil
 }

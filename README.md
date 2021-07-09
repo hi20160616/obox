@@ -16,3 +16,4 @@ Just an object collector for data files storage.
 - [x] use walk instead of recurse in zipWriter
 - [x] add open and close data to a single cmd exec
 - [ ] innerLink invoke and use in render
+- [ ] listAttachments and ListAttachments redundancy
