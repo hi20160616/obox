@@ -17,3 +17,4 @@ Just an object collector for data files storage.
 - [x] add open and close data to a single cmd exec
 - [ ] innerLink invoke and use in render
 - [ ] listAttachments and ListAttachments redundancy
+- [ ] recurse dir but lost sub-dir, so the files in subfolder cannot be visited.

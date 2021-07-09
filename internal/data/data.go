@@ -155,16 +155,18 @@ func walk2(o *Object) (*Object, error) {
 // walk get all files info in o.Folder
 func walk(o *Object) ([]fs.FileInfo, error) {
 	files := []fs.FileInfo{}
-	err := filepath.Walk(o.Folder, func(path string, info fs.FileInfo, err error) error {
+	err := filepath.WalkDir(o.Folder, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
 			return err
 		}
-
-		if !info.IsDir() && filepath.Ext(path) != ".md" && info.Name()[:1] != "." {
-			files = append(files, info)
+		if !d.IsDir() && filepath.Ext(path) != ".md" && d.Name()[:1] != "." {
+			if info, err := d.Info(); err != nil {
+				return err
+			} else {
+				files = append(files, info)
+			}
 		}
-
 		return nil
 	})
 	if err != nil {
