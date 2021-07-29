@@ -27,6 +27,9 @@ builds:
       - darwin
 archives:
   - 
+    format_overrides:
+      - goos: windows
+        format: zip
     files:
       - configs/configs.json
       - README.md
