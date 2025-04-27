@@ -45,6 +45,22 @@ var (
 // pattern like `[!foobar]` means a inter-page need to be made as link
 var innerObject = regexp.MustCompile(`\[!.+\]`)
 
+type ObjectError struct {
+	ObjectTitle string
+	Err         error
+}
+
+func (oe ObjectError) Error() string {
+	return fmt.Sprintf("error processing object %s: %v", oe.ObjectTitle, oe.Err)
+}
+
+func handleError(err error, msg string) error {
+	if err != nil {
+		return fmt.Errorf("%s: %w", msg, err)
+	}
+	return nil
+}
+
 // GetObjects 获取对象列表，优先从缓存中获取
 func GetObjects() (*Objects, error) {
 	if objectsCache != nil {
@@ -143,7 +159,7 @@ func LoadHomePage() (*Object, error) {
 func NewObject(title string) (*Object, error) {
 	title, err := url.QueryUnescape(title)
 	if err != nil {
-		return nil, err
+		return nil, handleError(err, "failed to unescape object title")
 	}
 	p := &Object{Title: title}
 	p.Folder = filepath.Join(configs.Data.DataPath, title)
@@ -154,9 +170,16 @@ func NewObject(title string) (*Object, error) {
 // Save write done Body after NewObject() generate the p
 func Save(o *Object) error {
 	if _, err := os.Stat(o.Folder); err != nil && os.IsNotExist(err) {
-		os.MkdirAll(o.Folder, 0755)
+		err := os.MkdirAll(o.Folder, 0755)
+		if err != nil {
+			return handleError(err, fmt.Sprintf("failed to create folder for object %s", o.Title))
+		}
 	}
-	return os.WriteFile(o.FileTitle, []byte(o.Body), 0600)
+	err := os.WriteFile(o.FileTitle, []byte(o.Body), 0600)
+	if err != nil {
+		return handleError(err, fmt.Sprintf("failed to save object %s", o.Title))
+	}
+	return nil
 }
 
 // load read person info after NewObject() generate the p
@@ -164,9 +187,9 @@ func Load(o *Object) (*Object, error) {
 	body, err := os.ReadFile(o.FileTitle)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return o, err
+			return o, ObjectError{ObjectTitle: o.Title, Err: err}
 		}
-		return nil, err
+		return nil, handleError(err, fmt.Sprintf("failed to load object %s", o.Title))
 	}
 	o.Body = string(body)
 	return o, nil
@@ -176,7 +199,7 @@ func ListObjects() (*Objects, error) {
 	objs := &Objects{Title: "Objects list"}
 	dirs, err := os.ReadDir(configs.Data.DataPath)
 	if err != nil {
-		return nil, fmt.Errorf("error walking the path %q: %v", configs.Data.DataPath, err)
+		return nil, handleError(err, "failed to read data path")
 	}
 	for _, dir := range dirs {
 		if dir.IsDir() && strings.ToLower(dir.Name()) != "home" {
@@ -216,22 +239,19 @@ func walk(o *Object) ([]fs.FileInfo, error) {
 	files := []fs.FileInfo{}
 	err := filepath.WalkDir(o.Folder, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
-			return err
+			return handleError(err, fmt.Sprintf("error accessing path %s for object %s", path, o.Title))
 		}
-		// if !d.IsDir() && filepath.Ext(path) != ".md" && d.Name()[:1] != "." {
 		if d.Name()[:1] != "." {
-			if info, err := d.Info(); err != nil {
-				return err
-			} else {
-				files = append(files, info)
+			info, err := d.Info()
+			if err != nil {
+				return handleError(err, fmt.Sprintf("failed to get file info for %s in object %s", d.Name(), o.Title))
 			}
+			files = append(files, info)
 		}
 		return nil
 	})
 	if err != nil {
-		fmt.Printf("error walking the path %q: %v\n", o.Folder, err)
-		return nil, err
+		return nil, handleError(err, fmt.Sprintf("error walking the path %s for object %s", o.Folder, o.Title))
 	}
 	return files, nil
 }
@@ -239,15 +259,15 @@ func walk(o *Object) ([]fs.FileInfo, error) {
 func readDir(o *Object) ([]fs.FileInfo, error) {
 	files, err := os.ReadDir(o.Folder)
 	if err != nil {
-		return nil, err
+		return nil, handleError(err, fmt.Sprintf("failed to read directory for object %s", o.Title))
 	}
 	rt := []fs.FileInfo{}
 	for _, file := range files {
 		fname := file.Name()
-		if file.Type().IsRegular() && filepath.Ext(fname) != ".md" && fname[:1] != "." {
+		if file.Type().IsRegular() && fname[:1] != "." {
 			f, err := file.Info()
 			if err != nil {
-				return nil, err
+				return nil, handleError(err, fmt.Sprintf("failed to get file info for %s in object %s", fname, o.Title))
 			}
 			rt = append(rt, f)
 		}
