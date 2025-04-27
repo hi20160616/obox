@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -44,9 +44,14 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ViewHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
-	o, err := data.Load(o)
+	var err error
+	o, err = data.GetObject(o.Title)
 	if err != nil {
-		http.Redirect(w, r, "/edit/"+o.Title, http.StatusFound)
+		if errors.Is(err, os.ErrNotExist) {
+			http.Redirect(w, r, "/edit/"+o.Title, http.StatusFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	o.Body = data.InnerLink(o.Body)
@@ -57,6 +62,43 @@ func ViewHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
 		return
 	}
 	render.Derive(w, "view", o)
+}
+
+func SaveHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
+	o.Body = r.FormValue("body")
+	if err := data.Save(o); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// 更新对象缓存
+	data.UpdateObjectCache(o)
+	// 更新对象列表缓存
+	if err := data.UpdateObjectsCache(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/view/"+o.Title, http.StatusFound)
+}
+
+func DelHandler(w http.ResponseWriter, r *http.Request) {
+	ss := strings.Split(r.URL.Path, "/")
+	if len(ss) >= 4 {
+		if err := os.Remove(filepath.Join(configs.Data.DataPath, ss[2], ss[3])); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+	o, err := data.NewObject(ss[2])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	// 删除对象缓存
+	data.DeleteObjectCache(o.Title)
+	// 更新对象列表缓存
+	if err := data.UpdateObjectsCache(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	EditHandler(w, r, o)
 }
 
 func EditHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
@@ -104,7 +146,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
 
 		// read all of the contents of uploaded files into a
 		// byte array
-		fileBytes, err := ioutil.ReadAll(file)
+		fileBytes, err := io.ReadAll(file)
 		if err != nil {
 			return errors.WithMessagef(err, "Read bytes from %s error", handler.Filename)
 		}
@@ -126,34 +168,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
 	EditHandler(w, r, o)
 }
 
-func DelHandler(w http.ResponseWriter, r *http.Request) {
-	ss := strings.Split(r.URL.Path, "/")
-	if len(ss) >= 4 {
-		if err := os.Remove(filepath.Join(configs.Data.DataPath, ss[2], ss[3])); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}
-
-	o, err := data.NewObject(ss[2])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	EditHandler(w, r, o)
-}
-
-func SaveHandler(w http.ResponseWriter, r *http.Request, o *data.Object) {
-	o.Body = r.FormValue("body")
-
-	// o := &Object{Title: title, Body: body}
-	if err := data.Save(o); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/view/"+o.Title, http.StatusFound)
-}
-
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	hp, err := data.LoadHomePage()
+	hp, err := data.GetHomePage()
 	if err != nil {
 		if os.IsNotExist(err) {
 			http.Redirect(w, r, "edit/Home", http.StatusFound)
@@ -166,7 +182,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListHandler(w http.ResponseWriter, r *http.Request) {
-	objs, err := data.ListObjects()
+	objs, err := data.GetObjects()
 	if err != nil {
 		objs.Err = err
 		render.DeriveList(w, objs)

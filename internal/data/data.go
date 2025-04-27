@@ -36,8 +36,68 @@ type HomePage struct {
 	Info                           string
 }
 
+var (
+	objectCache   = make(map[string]*Object)
+	objectsCache  *Objects
+	homePageCache *Object
+)
+
 // pattern like `[!foobar]` means a inter-page need to be made as link
 var innerObject = regexp.MustCompile(`\[!.+\]`)
+
+// GetObjects 获取对象列表，优先从缓存中获取
+func GetObjects() (*Objects, error) {
+	if objectsCache != nil {
+		return objectsCache, nil
+	}
+	var err error
+	objectsCache, err = ListObjects()
+	return objectsCache, err
+}
+
+// GetObject 获取单个对象，优先从缓存中获取
+func GetObject(title string) (*Object, error) {
+	if obj, ok := objectCache[title]; ok {
+		return obj, nil
+	}
+	var err error
+	obj, err := NewObject(title)
+	if err != nil {
+		return nil, err
+	}
+	obj, err = Load(obj)
+	if err != nil {
+		return nil, err
+	}
+	objectCache[title] = obj
+	return obj, nil
+}
+
+// GetHomePage 获取主页数据，优先从缓存中获取
+func GetHomePage() (*Object, error) {
+	if homePageCache != nil {
+		return homePageCache, nil
+	}
+	var err error
+	homePageCache, err = LoadHomePage()
+	return homePageCache, err
+}
+
+// 当对象保存或删除时，需要更新缓存
+func UpdateObjectCache(o *Object) {
+	objectCache[o.Title] = o
+}
+
+func DeleteObjectCache(title string) {
+	delete(objectCache, title)
+}
+
+// 当对象列表发生变化时，需要更新缓存
+func UpdateObjectsCache() error {
+	var err error
+	objectsCache, err = ListObjects()
+	return err
+}
 
 func InnerLink(body string) string {
 	repl := func(pagename string) string {
