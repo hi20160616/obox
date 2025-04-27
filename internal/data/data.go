@@ -87,7 +87,7 @@ func NewObject(title string) (*Object, error) {
 	}
 	p := &Object{Title: title}
 	p.Folder = filepath.Join(configs.Data.DataPath, title)
-	p.FileTitle = filepath.Join(p.Folder, title+".md")
+	p.FileTitle = filepath.Join(p.Folder, "."+title+".md")
 	return p, nil
 }
 
@@ -160,7 +160,8 @@ func walk(o *Object) ([]fs.FileInfo, error) {
 			fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
 			return err
 		}
-		if !d.IsDir() && filepath.Ext(path) != ".md" && d.Name()[:1] != "." {
+		// if !d.IsDir() && filepath.Ext(path) != ".md" && d.Name()[:1] != "." {
+		if d.Name()[:1] != "." {
 			if info, err := d.Info(); err != nil {
 				return err
 			} else {

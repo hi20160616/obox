@@ -1,7 +1,7 @@
 {
 	"DataPath": "db",
 	"Password": "password",
-	"Address": "0.0.0.0:80",
+	"Address": "0.0.0.0:8080",
 	"UploadOverwrite": false,
-	"RecurseDir": false
+	"RecurseDir": true
 }
