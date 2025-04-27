@@ -22,7 +22,7 @@
 	{{range $i, $data := .Data}}
 	<tr>
 	    <th scope="row">{{plusOne $i}}</th>
-	    <td><a href="/src/{{$title}}/{{$data.Name}}" target="_blank">{{$data.Name}}</a></td>
+	    <td><a href="/src/{{$title}}/{{$data.Name}}">{{$data.Name}}</a></td>
 	    <td>{{byteCountSI $data.Size}}</td>
 	    <td>{{smartTime $data.ModTime}}</td>
 	</tr>
