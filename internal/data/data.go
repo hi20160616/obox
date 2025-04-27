@@ -186,23 +186,15 @@ func ListObjects() (*Objects, error) {
 	return objs, nil
 }
 
-func ListAttachments(o *Object) (*Object, error) {
-	if configs.Data.RecurseDir {
-		return walk2(o)
-	}
-	return readDir2(o)
-}
-
-func listAttachments(o *Object) ([]fs.FileInfo, error) {
+func GetAttachments(o *Object) ([]fs.FileInfo, error) {
 	if configs.Data.RecurseDir {
 		return walk(o)
 	}
 	return readDir(o)
 }
 
-// Walk2 is encapsulated walk, that append fileinfos to o.Data
-func walk2(o *Object) (*Object, error) {
-	files, err := walk(o)
+func ListAttachments(o *Object) (*Object, error) {
+	files, err := GetAttachments(o)
 	if err != nil {
 		return nil, err
 	}
@@ -210,6 +202,13 @@ func walk2(o *Object) (*Object, error) {
 		o.Data = append(o.Data, file)
 	}
 	return o, nil
+}
+
+func listAttachments(o *Object) ([]fs.FileInfo, error) {
+	if configs.Data.RecurseDir {
+		return walk(o)
+	}
+	return readDir(o)
 }
 
 // walk get all files info in o.Folder
@@ -235,17 +234,6 @@ func walk(o *Object) ([]fs.FileInfo, error) {
 		return nil, err
 	}
 	return files, nil
-}
-
-func readDir2(o *Object) (*Object, error) {
-	files, err := readDir(o)
-	if err != nil {
-		return nil, err
-	}
-	for _, f := range files {
-		o.Data = append(o.Data, f)
-	}
-	return o, nil
 }
 
 func readDir(o *Object) ([]fs.FileInfo, error) {
