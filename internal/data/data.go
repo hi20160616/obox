@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -68,9 +67,10 @@ func LoadHomePage() (*Object, error) {
 		return nil, err
 	}
 	Atts := []os.FileInfo{}
-	for _, file := range files {
-		Atts = append(Atts, file)
-	}
+	// for _, file := range files {
+	// 	Atts = append(Atts, file)
+	// }
+	Atts = append(Atts, files...)
 	// list objects
 	Objs, err := ListObjects()
 	if err != nil {
@@ -96,12 +96,12 @@ func Save(o *Object) error {
 	if _, err := os.Stat(o.Folder); err != nil && os.IsNotExist(err) {
 		os.MkdirAll(o.Folder, 0755)
 	}
-	return ioutil.WriteFile(o.FileTitle, []byte(o.Body), 0600)
+	return os.WriteFile(o.FileTitle, []byte(o.Body), 0600)
 }
 
 // load read person info after NewObject() generate the p
 func Load(o *Object) (*Object, error) {
-	body, err := ioutil.ReadFile(o.FileTitle)
+	body, err := os.ReadFile(o.FileTitle)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return o, err
@@ -116,7 +116,7 @@ func ListObjects() (*Objects, error) {
 	objs := &Objects{Title: "Objects list"}
 	dirs, err := os.ReadDir(configs.Data.DataPath)
 	if err != nil {
-		return nil, fmt.Errorf("error walking the path %q: %v\n", configs.Data.DataPath, err)
+		return nil, fmt.Errorf("error walking the path %q: %v", configs.Data.DataPath, err)
 	}
 	for _, dir := range dirs {
 		if dir.IsDir() && strings.ToLower(dir.Name()) != "home" {
